@@ -84,7 +84,7 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
         for k in kvals:
             intopk = torch.le(gt_ranks, k).float().mul_(100) # bsz x nexchanges
             meters['recall@' + str(k)].update( list(intopk.cpu().view(-1).numpy()) )
-            meters['rrank'].update( list( (1.0 / gt_ranks).cpu().view(-1).numpy()) )
+        meters['rrank'].update( list( (1.0 / gt_ranks).cpu().view(-1).numpy()) )
     
     if isinstance(sorted_corrs, torch.Tensor): # if --threshold 
         np_sorted_corrs = sorted_corrs.cpu().numpy()
@@ -98,7 +98,9 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
                 meters['ge_thresh'].update( (sorted_corrs[bb][nn][gt_rank-1] >= threshold).float().mul_(100).item() )
      
                 ge_threshold_idxs = torch.ge(sorted_corrs[bb][nn], threshold)
-                if ge_threshold_idxs.float().sum() > 1:
+                nsize = ge_threshold_idxs.float().sum()
+                meters['ge_thresh_size'].update( nsize.item() )
+                if nsize > 1:
                     meters['ge_thresh_var'].update( torch.var( sorted_corrs[bb][nn][ ge_threshold_idxs ]).item() )
 
     return meters
@@ -106,7 +108,7 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
 def stringify_meters(meters):
     s = 'meters: '
     for k,v in meters.items():
-        s += '\t{name}: {meter: 6.4f}'.format(name=k, meter=v.avg)
+        s += '\t{name}: {meter: 6.4f} (var: {variance: 6.4f})'.format(name=k, meter=v.avg, variance=v.compute_variance())
     if meters['mrank'].count > 0:
         s += '\tmedian: {median: 6.4f}'.format(median=np.median(meters['mrank'].values))
     return s + '\n'
@@ -200,6 +202,12 @@ class AverageMeter(object):
         self.sum += sum(val)
         self.count += len(val)
         self.avg = self.sum / float(self.count)
+
+    def compute_variance(self):
+        if self.count > 1:
+            return torch.var( torch.Tensor(self.values) )
+        else:
+            return 0
 
 def get_avg_embedding(idx_batch, idx_lens, dictionary):
 
