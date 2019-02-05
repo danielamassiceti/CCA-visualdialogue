@@ -56,7 +56,7 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
 
         dists = torch.norm( emb_opts - mean_train_answer.unsqueeze(2).expand(bsz, opt.exchangesperimage, 100, opt.emsize), p=2, dim=3) # bsz x opt.exchangesperimage x 100
         sorted_dists, indices_dists = torch.sort(dists, dim=2, descending=False)
- 
+        
         # compute ranks 
         ranks = torch.zeros(sorted_dists.size()).type_as(sorted_dists)
         ranks.scatter_(2, indices_dists, torch.arange(1,101).type_as(sorted_dists).view(1,1,100).expand_as(sorted_dists)) # bsz x nexchanges
