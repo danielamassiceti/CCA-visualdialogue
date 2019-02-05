@@ -101,14 +101,14 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
                 nsize = ge_threshold_idxs.float().sum()
                 meters['ge_thresh_size'].update( nsize.item() )
                 if nsize > 1:
-                    meters['ge_thresh_var'].update( torch.var( sorted_corrs[bb][nn][ ge_threshold_idxs ]).item() )
+                    meters['ge_thresh_std'].update( torch.std( sorted_corrs[bb][nn][ ge_threshold_idxs ]).item() )
 
     return meters
     
 def stringify_meters(meters):
     s = 'meters: '
     for k,v in meters.items():
-        s += '\t{name}: {meter: 6.4f} (var: {variance: 6.4f})'.format(name=k, meter=v.avg, variance=v.compute_variance())
+        s += '\t{name}: {meter: 6.4f} (std: {std: 6.4f})'.format(name=k, meter=v.avg, std=v.compute_std())
     if meters['mrank'].count > 0:
         s += '\tmedian: {median: 6.4f}'.format(median=np.median(meters['mrank'].values))
     return s + '\n'
@@ -203,9 +203,9 @@ class AverageMeter(object):
         self.count += len(val)
         self.avg = self.sum / float(self.count)
 
-    def compute_variance(self):
+    def compute_std(self):
         if self.count > 1:
-            return torch.var( torch.Tensor(self.values) )
+            return torch.std( torch.Tensor(self.values) )
         else:
             return 0
 

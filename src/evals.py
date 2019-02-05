@@ -97,7 +97,7 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
     
     if opt.threshold:
         meters['ge_thresh'] = utils.AverageMeter()
-        meters['ge_thresh_var'] = utils.AverageMeter()
+        meters['ge_thresh_std'] = utils.AverageMeter()
         meters['ge_thresh_size'] = utils.AverageMeter()
     
     proj_mtxs = utils.send_to_device(proj_mtxs, opt.gpu)
