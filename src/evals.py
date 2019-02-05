@@ -15,12 +15,6 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
     k=100
     kp=20
 
-    # buffers
-    #sorted_dists_buffer = torch.zeros(opt.batch_size, opt.exchangesperimage, 100)
-    #sorted_dists_buffer = utils.send_to_device(sorted_dists_buffer, opt.gpu)
-    #indices_dists_buffer = torch.zeros(opt.batch_size, opt.exchangesperimage, 100).long()
-    #indices_dists_buffer = utils.send_to_device(indices_dists_buffer, opt.gpu)
-   
     emb_train_answers = utils.send_to_device(train_views[0], opt.gpu)
     emb_train_questions = utils.send_to_device(train_views[-1], opt.gpu)
     if len(train_views) == 3:
@@ -38,9 +32,6 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
         bsz = batch['img'].size(0)
         batch = utils.send_to_device(batch, opt.gpu)
         
-        #sorted_dists = sorted_dists_buffer[0:bsz].view(-1, 100).fill_(0)
-        #indices_dists = indices_dists_buffer[0:bsz].view(-1, 100).fill_(0)
-
         # averaged word vectors for question
         emb_question = utils.get_avg_embedding(batch['questions_ids'], batch['questions_length'], dictionary) # bsz x nexchanges x 300
 
@@ -65,29 +56,7 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
 
         dists = torch.norm( emb_opts - mean_train_answer.unsqueeze(2).expand(bsz, opt.exchangesperimage, 100, opt.emsize), p=2, dim=3) # bsz x opt.exchangesperimage x 100
         sorted_dists, indices_dists = torch.sort(dists, dim=2, descending=False)
-
-        #for q_i, q in enumerate(emb_question.view(-1, opt.emsize)): # flatten bsz and opt.exchangesperimage
-            # get top-k questions from train set
-        #    dists = torch.norm( emb_train_questions - q.unsqueeze(0).expand_as(emb_train_questions), p=2, dim=1)
-        #    topk_train_question_idxs = torch.topk(dists, k=k, largest=False)[1] # k indices
-        #    # get their corresponding answer embeddings
-        #    topk_train_emb_answers = emb_train_answers.index_select(0, topk_train_question_idxs) # k x opt.emsize
-        #    mean_train_answer = topk_train_emb_answers.mean(dim=0) # opt.emsize
-                
-        #    if len(train_views) == 3: # further filter ids with image feature
-        #        dists = torch.norm( emb_train_images.index_select(0, topk_train_question_idsx) - batch['img'].view(-1, img_feat_size).index_select(0, q_i).expand(kp, img_feat_size), p=2, dim=1)
-        #        topkp_train_question_idxs = torch.topk(dists, k=kp, largest=False)[1] # kp indices 
-        #        mean_train_answer = topk_train_emb_answers [ topkp_train_question_idxs ].mean(dim=0) # opt.emsize
-        
-        #    # compute nearest-neighbour between 100 candidates & mean answer
-        #    dists = torch.norm( emb_opts[q_i] - mean_train_answer.unsqueeze(0).expand(100, opt.emsize), p=2, dim=1) # 100
-        #    sorted_dists[q_i], indices_dists[q_i] = torch.sort(dists, descending=False) #  100
-            #pdb.set_trace()
-   
-        # re-view dists
-        #sorted_dists = sorted_dists.view(bsz, opt.exchangesperimage, 100)
-        #indices_dists = indices_dists.view(bsz, opt.exchangesperimage, 100)
-            
+ 
         # compute ranks 
         ranks = torch.zeros(sorted_dists.size()).type_as(sorted_dists)
         ranks.scatter_(2, indices_dists, torch.arange(1,101).type_as(sorted_dists).view(1,1,100).expand_as(sorted_dists)) # bsz x nexchanges
@@ -96,7 +65,7 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
         meters = utils.process_ranks_for_meters(meters, gt_ranks, sorted_corrs if opt.threshold else None, opt.on_the_fly) 
         utils.log_iteration_stats(log, meters, i+1, len(test_loader)) 
 
-    log.info(utils.stringify_meters(meters))
+    return meters
 
 # computes ranking performance on candidate set of answers
 def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections, proj_train_mus, dictionary, opt, log, set, train_loader=None):
