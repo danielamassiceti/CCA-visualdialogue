@@ -56,15 +56,16 @@ We quantify the validity of the top-ranked answers (either *VisDial* or on-the-f
 For any given question and candidate answer set, we cluster the answers
 based on an automatic binary thresholding (ISODATA [Ridler and Calvard, 1978](https://ieeexplore.ieee.org/document/4310039?arnumber=4310039&tag=1)) of their
 correlations with the given question. We then compute:
-(1) The average variance of the correlations in the lower-ranked split, and
-(2) The fraction of questions whose correlation with the ground truth answer is higher than the threshold. 
+(1) The average standard deviation of the correlations in the lower-ranked split,
+(2) The number of answers (out of 100) falling in the lower-ranked split, and
+(2) The fraction of questions whose correlation with the ground truth answer is higher than the threshold.
 
-This quantifies (1) how closely clustered the top answers are, and (2) how often the
-ground-truth answer is in this cluster, respectively. Low values for the first, and high values for the second
+This quantifies (1) how closely clustered the top answers are, (2) how large the set of highly correlated answers is, and (3) how often the
+ground-truth answer is in this cluster, respectively. Low values for the first, and high values for the second and third
 would indicate that there exists an equivalence class of answers, all relatively close to the ground-truth
 answer in terms of their ability to answer the question.
 
-To compute statistics (1) and (2), use the `--threshold` flag.
+To compute statistics (1), (2), and (3), use the `--threshold` flag.
 
 ### Uploading to EvalAI Visual Dialog Challenge 2018 Server
 
