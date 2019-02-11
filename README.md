@@ -69,7 +69,7 @@ To compute statistics (1), (2), and (3), use the `--threshold` flag.
 
 ### Uploading to EvalAI Visual Dialog Challenge 2018 Server
 
-Results on Visual Dialogue *v1.0* can additionally be uploaded to the [EvalAI Visual Dialog Challenge 2018 Server](https://evalai.cloudcv.org/auth/login). For the validation set, the standard MR, MRR and
+Results on Visual Dialogue *v1.0* can additionally be uploaded to the [EvalAI Visual Dialog Challenge Evaluation Server](https://evalai.cloudcv.org/auth/login). For the validation set, the standard MR, MRR and
 recall@{1,5,10} will be computed. For the test set, an additional metric, the normalised discounted cumulative gain (NDCG) will be computed. 
 
 To specify this option, use `--datasetversion 1.0 --batch_size 1 --evalset <val or test> --save_ranks`
