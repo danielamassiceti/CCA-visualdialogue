@@ -54,7 +54,7 @@ flag to specify this option, and, as before, `--interative --batch_size 1` to qu
 We quantify the validity of the top-ranked answers (either *VisDial* or on-the-fly candidates) in relation to the ground truth using a heuristic based on their correlations:
 
 For any given question and candidate answer set, we cluster the answers
-based on an automatic binary thresholding (ISODATA [Ridler and Calvard, 1978](https://ieeexplore.ieee.org/document/4310039?arnumber=4310039&tag=1)) of their
+based on an automatic binary thresholding ([Otsu (1979)](https://ieeexplore.ieee.org/document/4310076)) of their
 correlations with the given question. We then compute:
 (1) The average standard deviation of the correlations in the lower-ranked split,
 (2) The number of answers (out of 100) falling in the lower-ranked split, and

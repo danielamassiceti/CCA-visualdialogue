@@ -62,9 +62,7 @@ def process_ranks_to_save(ranks_to_save, img_names, ranks, round_ids, which_set)
                     'ranks': img_ranks[round_id].cpu().int().numpy().tolist()
                     })
         else: # train/val set
-            print (img_ranks)
             for ii, img_rank in enumerate(img_ranks):
-                print (ii)
                 ranks_to_save.append({
                     'image_id': int(img_names[i].split('.')[0][-12:]),
                     'round_id': ii + 1, 
@@ -92,7 +90,7 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
         for bb in range(gt_ranks.size(0)):
             for nn in range(gt_ranks.size(1)):
                 # computes threshold on correlations 
-                threshold = threshold_isodata(np_sorted_corrs[bb][nn], nbins=5)
+                threshold = threshold_otsu(np_sorted_corrs[bb][nn])
             
                 gt_rank = gt_ranks[bb][nn].long()
                 meters['ge_thresh'].update( (sorted_corrs[bb][nn][gt_rank-1] >= threshold).float().mul_(100).item() )
