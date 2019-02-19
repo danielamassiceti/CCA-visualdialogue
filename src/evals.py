@@ -168,9 +168,10 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
                 worded_gt_a = test_loader.dataset.all_answers[batch['answers'][randint][ex]]
                 print ('Question #{:d}/{:d}: {}'.format(ex+1, opt.exchangesperimage, worded_q))
                 print ('Ground-truth answer #{:d}/{:d}: {}'.format(ex+1, opt.exchangesperimage, worded_gt_a))
-                print ('Candidate answers (on-the-fly=' + str(opt.on_the_fly) + '):')
+                print ('Ranked (by correlation) candidate answers (on-the-fly=' + str(opt.on_the_fly) + '):')
                 if opt.on_the_fly:
-                    idxs = zip(topk_train_question_idxs[randint][ex] // opt.exchangesperimage, topk_train_question_idxs[randint][ex] % opt.exchangesperimage)
+                    ranked_idxs = topk_train_question_idxs[randint][ex][ indices[randint][ex] ]
+                    idxs = zip(ranked_idxs // opt.exchangesperimage, ranked_idxs % opt.exchangesperimage)
                     candidates = [train_loader.dataset[idx]['answers'][exchange_idx] for idx, exchange_idx in idxs]
                     worded_candidates = [train_loader.dataset.all_answers[c] for c in candidates]
                 else:
