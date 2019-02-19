@@ -42,7 +42,7 @@ It is also possible to run three-view CCA on the questions, answers *and* images
 To *view* the ranked candidates answers for given questions, use `--interactive --batch_size 1`. This will print out the ranked candidate answers for an image and its
 associated 10 questions.
 
-### Ranking on-the-fly candidate answers
+### Generating on-the-fly candidate answers
 
 The above computes the MR, MRR and recall@{1,5,10} using the candidate answer sets provided in the [Visual Dialogue](http://www.visualdialog.org) dataset. It is also possible,
 however, to construct candidate answer sets on-the-fly using CCA: the closest questions to the test question are drawn from the training set, and their corresponding answers
@@ -51,7 +51,7 @@ flag to specify this option, and, as before, `--interative --batch_size 1` to qu
 
 ### Analysing top-ranked answers
 
-We quantify the validity of the top-ranked answers (either *VisDial* or on-the-fly candidates) in relation to the ground truth using a heuristic based on their correlations:
+We quantify the validity of the top-ranked answers from the *VisDial* candidates in relation to the ground truth using a heuristic based on their correlations:
 
 For any given question and candidate answer set, we cluster the answers
 based on an automatic binary thresholding ([Otsu (1979)](https://ieeexplore.ieee.org/document/4310076)) of their
