@@ -2,7 +2,7 @@ import os, logging, json, re, math, cv2, torch
 import numpy as np
 import torch.nn as nn
 from torch.autograd import Variable
-from skimage.filters import threshold_otsu, threshold_yen, threshold_isodata
+from skimage.filters import threshold_otsu, threshold_isodata
 
 def send_to_device(input_batch, device):
 
@@ -72,9 +72,9 @@ def process_ranks_to_save(ranks_to_save, img_names, ranks, round_ids, which_set)
     
     return ranks_to_save
 
-def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=False):
+def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=0):
    
-    if not on_the_fly: # does not compute ranks when on_the_fly == True since gtidxs are meaningless here
+    if on_the_fly == 0: # does not compute ranks when on_the_fly > 0 since gtidxs are meaningless here
         meters['mrank'].update( list(gt_ranks.cpu().view(-1).numpy()) )
    
         # recall@k
@@ -83,24 +83,24 @@ def process_ranks_for_meters(meters, gt_ranks, sorted_corrs=None, on_the_fly=Fal
             intopk = torch.le(gt_ranks, k).float().mul_(100) # bsz x nexchanges
             meters['recall@' + str(k)].update( list(intopk.cpu().view(-1).numpy()) )
         meters['rrank'].update( list( (1.0 / gt_ranks).cpu().view(-1).numpy()) )
-    
-    if isinstance(sorted_corrs, torch.Tensor): # if --threshold 
-        np_sorted_corrs = sorted_corrs.cpu().numpy()
-        # computes isodata threshold on ranks and variance
-        for bb in range(gt_ranks.size(0)):
-            for nn in range(gt_ranks.size(1)):
-                # computes threshold on correlations 
-                threshold = threshold_otsu(np_sorted_corrs[bb][nn])
+       
+        if isinstance(sorted_corrs, torch.Tensor): # if --threshold 
+            np_sorted_corrs = sorted_corrs.cpu().numpy()
+            # computes otsu threshold on ranks and variance
+            for bb in range(gt_ranks.size(0)):
+            	for nn in range(gt_ranks.size(1)):
+                    # computes threshold on correlations 
+                    threshold = threshold_otsu(np_sorted_corrs[bb][nn])
             
-                gt_rank = gt_ranks[bb][nn].long()
-                meters['ge_thresh'].update( (sorted_corrs[bb][nn][gt_rank-1] >= threshold).float().mul_(100).item() )
+                    gt_rank = gt_ranks[bb][nn].long()
+                    meters['ge_thresh'].update( (sorted_corrs[bb][nn][gt_rank-1] >= threshold).float().mul_(100).item() )
      
-                ge_threshold_idxs = torch.ge(sorted_corrs[bb][nn], threshold)
-                nsize = ge_threshold_idxs.float().sum()
-                meters['ge_thresh_size'].update( nsize.item() )
-                if nsize > 1:
-                    meters['ge_thresh_std'].update( torch.std( sorted_corrs[bb][nn][ ge_threshold_idxs ]).item() )
-
+                    ge_threshold_idxs = torch.ge(sorted_corrs[bb][nn], threshold)
+                    nsize = ge_threshold_idxs.float().sum()
+                    meters['ge_thresh_size'].update( nsize.item() )
+                    if nsize > 1:
+                        meters['ge_thresh_std'].update( torch.std( sorted_corrs[bb][nn][ ge_threshold_idxs ]).item() )
+ 
     return meters
     
 def stringify_meters(meters):

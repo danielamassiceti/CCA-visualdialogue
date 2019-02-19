@@ -70,7 +70,7 @@ def nearest_neighbour_baselines(test_loader, dictionary, opt, log, set, train_vi
 # computes ranking performance on candidate set of answers
 def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections, proj_train_mus, dictionary, opt, log, set, train_loader=None):
 
-    log.info('computing ranks with on-the-fly candidates = ' + str(opt.on_the_fly))
+    log.info('computing ranks with on-the-fly candidates = ' + str(bool(opt.on_the_fly)))
    
     torch.autograd.set_grad_enabled(False)
 
@@ -78,10 +78,10 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
     meters, ranks_to_save = {}, []
     if opt.on_the_fly:
         # create buffers for projected candidates
-        topk_idx_buffer = torch.zeros(test_loader.batch_size, opt.exchangesperimage, 100).long()
+        topk_idx_buffer = torch.zeros(test_loader.batch_size, opt.exchangesperimage, opt.on_the_fly).long()
         topk_idx_buffer = utils.send_to_device(topk_idx_buffer, opt.gpu)
 
-        proj_opts_buffer = torch.zeros(test_loader.batch_size, opt.exchangesperimage, 100, opt.k)
+        proj_opts_buffer = torch.zeros(test_loader.batch_size, opt.exchangesperimage, opt.on_the_fly, opt.k)
         proj_opts_buffer = utils.send_to_device(proj_opts_buffer, opt.gpu)
 
         # mean centred train question projections
@@ -124,16 +124,16 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
         proj_q = proj_q.view(bsz, opt.exchangesperimage, 1, opt.k)
         
         # compute candidate answer set
-        if opt.on_the_fly:
-            topk_train_question_idxs = topk_idx_buffer[0:bsz].view(-1, 100).fill_(0)
-            proj_opts = proj_opts_buffer[0:bsz].view(-1, 100, opt.k).fill_(0)
+        if opt.on_the_fly: # >0
+            topk_train_question_idxs = topk_idx_buffer[0:bsz].view(-1, opt.on_the_fly).fill_(0)
+            proj_opts = proj_opts_buffer[0:bsz].view(-1, opt.on_the_fly, opt.k).fill_(0)
             for q_i, q in enumerate(proj_q.view(-1, opt.k)): # flatten bsz and opt.exchangesperimage
                 # get top-k questions from train set
-                topk_train_question_idxs[q_i] = cca_utils.topk_corr_distance(proj_q_train, q.unsqueeze(0), k=100)[1] # k indices
+                topk_train_question_idxs[q_i] = cca_utils.topk_corr_distance(proj_q_train, q.unsqueeze(0), k=opt.on_the_fly)[1] # k indices
                 # get their corresponding answers projections
                 proj_opts[q_i] = train_projections[0].index_select(0, topk_train_question_idxs[q_i])
-            topk_train_question_idxs = topk_train_question_idxs.view(bsz, opt.exchangesperimage, 100)
-            proj_opts = proj_opts.view(bsz, opt.exchangesperimage, 100, opt.k) 
+            topk_train_question_idxs = topk_train_question_idxs.view(bsz, opt.exchangesperimage, opt.on_the_fly)
+            proj_opts = proj_opts.view(bsz, opt.exchangesperimage, opt.on_the_fly, opt.k) 
         else:
             emb_opts = utils.get_avg_embedding(batch['answer_options_ids'].view(-1, 100, opt.seqlen), batch['answer_options_length'].view(-1, 100), dictionary)
             emb_opts = emb_opts.view(bsz, opt.exchangesperimage, 100, emb_opts.size(-1)) # bsz x nexchanges x 100 x opt.k
@@ -145,12 +145,12 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
 
         # compute (sorted) correlation between 100 candidates & 1 test question
         denom = torch.norm(proj_opts, p=2, dim=3) * torch.norm(proj_q.expand_as(proj_opts), p=2, dim=3)
-        corr = torch.matmul(proj_opts, proj_q.transpose(2,3)).squeeze(-1).div_(denom) # bsz x nexchanges x 100
-        sorted_corrs, indices = torch.sort(corr, dim=2, descending=True) # indices: bsz x nexchanges x 100
+        corrs = torch.matmul(proj_opts, proj_q.transpose(2,3)).squeeze(-1).div_(denom) # bsz x nexchanges x 100/opt.on_the_fly
+        sorted_corrs, indices = torch.sort(corrs, dim=2, descending=True) # indices: bsz x nexchanges x 100/opt.on_the_fly
 
         # compute ranks 
         ranks = torch.zeros(sorted_corrs.size()).type_as(sorted_corrs)
-        ranks.scatter_(2, indices, torch.arange(1,101).type_as(sorted_corrs).view(1,1,100).expand_as(sorted_corrs)) # bsz x nexchanges
+        ranks.scatter_(2, indices, torch.arange(1,101).type_as(sorted_corrs).view(1,1, opt.on_the_fly if opt.on_the_fly else 100).expand_as(sorted_corrs))
         if opt.save_ranks and not opt.on_the_fly:
             ranks_to_save = utils.process_ranks_to_save(ranks_to_save, batch['img_name'], ranks, batch['gtidxs'], set)
         

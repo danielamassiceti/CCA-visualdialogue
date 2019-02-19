@@ -33,7 +33,7 @@ def getopt():
 
     # evaluation
     parser.add_argument('--save_ranks', dest='save_ranks', action='store_true', help='save ranks for upload to evaluation server')
-    parser.add_argument('--on_the_fly', dest='on_the_fly', action='store_true', help='compute candidate answers on-the-fly from training set')
+    parser.add_argument('--on_the_fly', dest='on_the_fly', type=int, default=0, help='compute # candidate answers on-the-fly from training set (default: 0)')
     parser.add_argument('--interactive', dest='interactive', action='store_true', help='print out ranked candidate answers')
     parser.add_argument('--threshold', dest='threshold', action='store_true', help='compute threshold analysis')
 
