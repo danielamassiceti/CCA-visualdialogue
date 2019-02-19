@@ -150,7 +150,7 @@ def candidate_answers_recall(test_loader, lambdas, proj_mtxs, train_projections,
 
         # compute ranks 
         ranks = torch.zeros(sorted_corrs.size()).type_as(sorted_corrs)
-        ranks.scatter_(2, indices, torch.arange(1,101).type_as(sorted_corrs).view(1,1, opt.on_the_fly if opt.on_the_fly else 100).expand_as(sorted_corrs))
+        ranks.scatter_(2, indices, torch.arange(1,101).type_as(sorted_corrs).view(1,1,100).expand_as(sorted_corrs))
         if opt.save_ranks and not opt.on_the_fly:
             ranks_to_save = utils.process_ranks_to_save(ranks_to_save, batch['img_name'], ranks, batch['gtidxs'], set)
         
